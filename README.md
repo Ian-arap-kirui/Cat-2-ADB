@@ -1,3 +1,4 @@
+# 204815 - KIPROTICH IAN MARK - CAT 2 SUBMISSION.
 # Information Retrieval System using Elasticsearch & Kibana: A case study of Sports-related documents
 
 ## Overview
@@ -20,8 +21,17 @@ This technical manual details how to set up a traditional Information Retrieval 
 - Docker installed: https://docs.docker.com/get-docker/
 - Docker Compose installed: https://docs.docker.com/compose/install/
 - Docker Compose yaml file
-- Folder structure: 
-<img src="./screenshots/file-structure.png" alt="Description" width="200"/>
+- Folder structure:
+``` ir-project/
+├── corpus/
+│   └── sports
+          └── sports-docs.pdf
+          └── sports_bulk.json
+├── es_data/
+└── .env
+└── docker-compose.yml
+
+```
 
 ## Step 1: Setup a Single-node cluster 
 
@@ -162,8 +172,132 @@ the output on the terminal will be:
  ✔ Container kibana         Running                                                          0.0s 
  *  Terminal will be reused by tasks, press any key to close it.
 ```
-
-## Step 3: Document Corpus
+Now we can load data and query/retrieve information from it
+### Step 3: Load Document Corpus
 The choice of topic was around Sports-related PDF documents stored in a volume.
 
+A preloaded ```json``` and ```pdf``` file were loaded in to a folder named ```/corpus/sports/``` both of which contain the data that will be ingested by elasticsearch
+ #### 1. Open a terminal
+ cd
+ ```
+cd corpus/sports/
+```
+
+#### 2. Having the information/corpus in ```json``` format in the directory, we can use curl to Bulk Index to upload to elasticsearch for indexing
+why? You cannot upload a file directly in Kibana, so use curl instead for bulk upload.
+In terminal:
+```
+curl -X POST "localhost:9200/_bulk" \
+  -H "Content-Type: application/json" \
+  --data-binary @sports_bulk.json
+```
+
+#### 3. Access Kibana 
+Simply right click on the ```docker-compose.yml``` and select ```compose - select services``` and choose both ```elastic-search``` and ```kibana```
+
+the output on the terminal will be:
+```
+ *  Executing task: docker compose -f 'docker.compose.yml' up -d --build 'elasticsearch' 'kibana' 
+
+[+] Running 2/0
+ ✔ Container elasticsearch  Running                                                          0.0s 
+ ✔ Container kibana         Running                                                          0.0s 
+ *  Terminal will be reused by tasks, press any key to close it.
+```
+go to ```http://localhost:5601/```
+
+#### 4. Index the Extracted Content into Elasticsearch(at Kibana - devtools)
+In json
+```
+PUT /sports
+{
+  "mappings": {
+    "properties": {
+      "title": { "type": "text" },
+      "content": { "type": "text" }
+    }
+  }
+}
+
+```
+
+#### 5. Perform a search on Indexed Content
+```
+GET /sports/_search
+{
+  "query": {
+    "match": {
+      "content": "NBA"
+    }
+  }
+}
+
+```
+output:
+```
+{
+  "took": 10,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 5,
+      "relation": "eq"
+    },
+    "max_score": 3.4788775,
+    "hits": [
+      {
+        "_index": "sports",
+        "_id": "R5KGEpYBo7CWKCtLGzdu",
+        "_score": 3.4788775,
+        "_source": {
+          "title": "significance in modern basketball.",
+          "content": "NBA Evolution (22)"
+        }
+      },
+      {
+        "_index": "sports",
+        "_id": "PJKGEpYBo7CWKCtLGzdu",
+        "_score": 2.7833369,
+        "_source": {
+          "title": "Famous NBA Players (14)",
+          "content": "Famous NBA Players (14) - This section provides an overview of famous nba players (14) and its"
+        }
+      },
+      {
+        "_index": "sports",
+        "_id": "U5KGEpYBo7CWKCtLGzdu",
+        "_score": 2.7833369,
+        "_source": {
+          "title": "Famous NBA Players (30)",
+          "content": "Famous NBA Players (30) - This section provides an overview of famous nba players (30) and its"
+        }
+      },
+      {
+        "_index": "sports",
+        "_id": "WpKGEpYBo7CWKCtLGzdu",
+        "_score": 2.7833369,
+        "_source": {
+          "title": "Famous NBA Players (35)",
+          "content": "Famous NBA Players (35) - This section provides an overview of famous nba players (35) and its"
+        }
+      },
+      {
+        "_index": "sports",
+        "_id": "YJKGEpYBo7CWKCtLGzdu",
+        "_score": 2.7833369,
+        "_source": {
+          "title": "Famous NBA Players (39)",
+          "content": "Famous NBA Players (39) - This section provides an overview of famous nba players (39) and its"
+        }
+      }
+    ]
+  }
+}
+```
 
