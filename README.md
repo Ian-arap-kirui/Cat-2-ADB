@@ -19,35 +19,34 @@ This technical manual details how to set up a traditional Information Retrieval 
 
 - Docker installed: https://docs.docker.com/get-docker/
 - Docker Compose installed: https://docs.docker.com/compose/install/
+- Docker Compose yaml file
 - Folder structure: 
 <img src="./screenshots/file-structure.png" alt="Description" width="200"/>
 
-===== Start a single-node cluster
+## Step 1: Run Elastic-Search in docker
 
-. Install Docker. Visit https://docs.docker.com/get-docker/[Get Docker] to
-install Docker for your environment.
-+
-If using Docker Desktop, make sure to allocate at least 4GB of memory. You can
-adjust memory usage in Docker Desktop by going to **Settings > Resources**.
 
-. Create a new docker network.
-+
-[source,sh]
-----
+### Create a new docker network.
+
+
+```
 docker network create elastic
-----
-// REVIEWED[DEC.10.24]
-. Pull the {es} Docker image.
-+
---
-ifeval::["{release-state}"=="unreleased"]
-WARNING: Version {version} has not yet been released.
-No Docker image is currently available for {es} {version}.
-endif::[]
+```
+### Pull the elastic docker image
 
-[source,sh,subs="attributes"]
-----
-docker pull {docker-image}
-----
-// REVIEWED[DEC.10.24]
---
+```
+docker pull docker.elastic.co/elasticsearch/elasticsearch:8.17.4
+```
+
+### Optional: Install Cosign for your environment. Then use Cosign to verify the Elasticsearch image’s signature.
+```
+wget https://artifacts.elastic.co/cosign.pub
+cosign verify --key cosign.pub docker.elastic.co/elasticsearch/elasticsearch:8.17.4
+```
+### Start an Elasticsearch container:
+```
+docker run --name es01 --net elastic -p 9200:9200 -it -m 1GB docker.elastic.co/elasticsearch/elasticsearch:8.17.4
+```
+The command prints the elastic user password and an enrollment token for Kibana.
+
+output: 
