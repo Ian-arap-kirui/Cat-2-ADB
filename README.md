@@ -1,5 +1,9 @@
 # 204815 - KIPROTICH IAN MARK - CAT 2 SUBMISSION.
 # Information Retrieval System using Elasticsearch & Kibana: A case study of Sports-related documents
+## 🔗 GitHub Repository
+
+Explore the full project on GitHub: [Information Retrieval System - Sports Case Study](https://github.com/Ian-arap-kirui/Cat-2-ADB)
+
 
 ## Overview
 
