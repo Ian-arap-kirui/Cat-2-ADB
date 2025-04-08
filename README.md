@@ -27,6 +27,8 @@ This technical manual details how to set up a traditional Information Retrieval 
 │   └── sports
           └── sports-docs.pdf
           └── sports_bulk.json
+          └── sports_bulk_ngram.json
+
 ├── es_data/
 └── .env
 └── docker-compose.yml
@@ -301,3 +303,120 @@ output:
 }
 ```
 
+## Bonus: Search Optimization with Partial Word Matching
+
+To enhance the **search experience** and support **partial word queries** (e.g., typing `"dunk"` to find `"dunking"`), I implemented a custom **N-Gram Analyzer** in Elasticsearch.
+
+### Optimization steps:
+
+- **Custom N-Gram Analyzer**:
+  - Configured to tokenize text into substrings (n-grams) of 3 to 10 characters.
+  - This allows for **matching on partial inputs**, enabling autocomplete-like behavior.
+
+- **Index-Level Settings**:
+  - We extended the `index.max_ngram_diff` setting to support a wider range between `min_gram` and `max_gram`.
+  - Applied the analyzer on the `content` field during indexing for targeted improvements.
+
+- **Why it Matters**:
+  - Users don’t need to know full terms.
+  - Ideal for scenarios involving:
+    - Typo tolerance
+    - Autocomplete
+    - Substring search
+   
+    
+#### step 1: Delete current sports content on kibana
+```
+DELETE /sports
+```
+#### step 2: Create the New Index with ngram Analyzer on kibana
+Configuration is done to tokenize text into substrings (n-grams) of 3 to 10 characters.
+This allows for **matching on partial inputs**, enabling autocomplete-like behavior.
+
+```
+PUT /sports
+{
+  "settings": {
+    "index": {
+      "max_ngram_diff": 10
+    },
+    "analysis": {
+      "tokenizer": {
+        "ngram_tokenizer": {
+          "type": "ngram",
+          "min_gram": 3,
+          "max_gram": 10,
+          "token_chars": [ "letter", "digit" ]
+        }
+      },
+      "analyzer": {
+        "ngram_analyzer": {
+          "type": "custom",
+          "tokenizer": "ngram_tokenizer",
+          "filter": ["lowercase"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "ngram_analyzer",
+        "search_analyzer": "standard"
+      }
+    }
+  }
+}
+```
+
+#### step 4: Upload Bulk Data via Curl
+
+
+```
+cd corpus/sports
+
+curl -X POST "localhost:9200/_bulk" \
+  -H "Content-Type: application/json" \
+  --data-binary "@sports_bulk_ngram.json"
+
+
+```
+
+#### step 5: Create a Data View in Kibana
+
+choose the sports index and add an (*) asterick 
+```
+sports*
+```
+
+### DONE! Perform searches on kibana discover or devtools
+
+### For Example
+A search for:
+
+```json
+{
+  "query": {
+    "match": {
+      "content": "dunk"
+    }
+  }
+}
+
+```
+
+## References
+
+- [Elasticsearch Official Documentation](https://www.elastic.co/guide/en/elasticsearch/reference/index.html)
+- [Kibana Official Documentation](https://www.elastic.co/guide/en/kibana/index.html)
+- [Docker Documentation](https://docs.docker.com/)
+- [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [Bulk Upload Format in Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html)
+- [Custom Analyzers in Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-custom-analyzer.html)
+- [N-Gram Token Filter in Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-ngram-tokenfilter.html)
+- [Kibana DevTools Console](https://www.elastic.co/guide/en/kibana/current/console-kibana.html)
+- [Creating Index Patterns in Kibana](https://www.elastic.co/guide/en/kibana/current/index-patterns.html)
